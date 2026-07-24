@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, TimestampMixin, UUIDMixin
+from ..database.base import Base, TimestampMixin, UUIDMixin
 from .url import URL
 
 class User(Base, UUIDMixin, TimestampMixin):

@@ -4,10 +4,8 @@ from sqlalchemy import DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-
 class Base(DeclarativeBase):
     pass
-
 
 class TimestampMixin:
     created_at: Mapped[DateTime] = mapped_column(
@@ -23,10 +21,14 @@ class TimestampMixin:
         nullable=False,
     )
 
-
 class UUIDMixin:
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
+
+
+# Migrar o DB
+# Criar migração: alembic revision --autogenerate -m "Start DB"
+# Executar migração: alembic upgrade head

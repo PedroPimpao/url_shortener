@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, TimestampMixin, UUIDMixin
+from ..database.base import Base, TimestampMixin, UUIDMixin
 from .user import User
 
 class URL(Base, UUIDMixin, TimestampMixin):
@@ -21,6 +21,10 @@ class URL(Base, UUIDMixin, TimestampMixin):
         unique=True,
         index=True,
         nullable=False,
+    )
+
+    title: Mapped[str] = mapped_column(
+        String
     )
 
     expires_at: Mapped[datetime | None] = mapped_column(
