@@ -19,8 +19,9 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
+from app.config import settings
 from app.database.base import Base
-from app.config import settings 
+from app import models  # noqa: F401 - registra os modelos no metadata
 
 target_metadata = Base.metadata
 

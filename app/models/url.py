@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 import uuid
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
@@ -6,10 +7,19 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database.base import Base, TimestampMixin, UUIDMixin
-from .user import User
+
+if TYPE_CHECKING:
+    from .user import User
 
 class URL(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "urls"
+
+    # def __init__(self, title, original_url, short_code, clicks, user_id):
+    #     self.title = title
+    #     self.original_url = original_url
+    #     self.short_code = short_code
+    #     self.clicks = clicks
+    #     self.user_id = user_id
 
     original_url: Mapped[str] = mapped_column(
         String(2048),

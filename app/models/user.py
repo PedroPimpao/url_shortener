@@ -1,13 +1,21 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database.base import Base, TimestampMixin, UUIDMixin
-from .url import URL
+
+if TYPE_CHECKING:
+    from .url import URL
 
 class User(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "users"
+
+    def __init__(self, name, email, password):
+        self.name = name
+        self.email = email
+        self.password = password
 
     name: Mapped[str] = mapped_column(
         String(120),
