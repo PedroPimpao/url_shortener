@@ -14,12 +14,12 @@ if TYPE_CHECKING:
 class URL(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "urls"
 
-    # def __init__(self, title, original_url, short_code, clicks, user_id):
-    #     self.title = title
-    #     self.original_url = original_url
-    #     self.short_code = short_code
-    #     self.clicks = clicks
-    #     self.user_id = user_id
+    def __init__(self, title, original_url, short_code, user_id):
+        self.title = title
+        self.original_url = original_url
+        self.short_code = short_code
+        self.user_id = user_id
+        self.short_url = f'url_site/{short_code}'
 
     original_url: Mapped[str] = mapped_column(
         String(2048),

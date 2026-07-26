@@ -17,7 +17,7 @@ def get_session() -> Generator[Session, None, None]:
 def verify_token(token: str = Depends(oauth2_schema), session: Session = Depends(get_session)):
     try:
         dic_info = jwt.decode(token, settings.SECRET_KEY, settings.ALGORITHM)
-        userID = int(dic_info.get('sub'))
+        userID = str(dic_info.get('sub'))
     except JWTError:
         raise HTTPException(status_code=401, detail="Access Denied")
     user = session.query(User).filter(User.id == userID).first()

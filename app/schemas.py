@@ -16,7 +16,6 @@ class LoginSchema(BaseModel):
             from_attributes = True
 
 class URLSchema(BaseModel):
-    title: str
     original_url: str
 
     class Config:
