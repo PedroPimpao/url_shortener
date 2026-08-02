@@ -68,6 +68,55 @@ async def access_url(short_code: str, session: Session = Depends(get_session)):
         "clicks": url.clicks
     }
 
+@url_router.get('/list_urls')
+async def list_urls(session: Session = Depends(get_session), user: User = Depends(verify_token)):
+    """
+    Rota de Listagem de URLs do Usuário
+    """
+    try:
+        urls = session.query(URL).filter(URL.user_id == user.id).all()
+    except:
+        return { "message": "Erro ao buscar URLs" }
+
+    if not urls:
+        return { "message": "Nenhuma URL encontrada" }
+
+    url_list = []
+    for url in urls:
+        url_list.append({
+            "original-url": url.original_url,
+            "short-code": url.short_code,
+            "clicks": url.clicks
+        })
+
+    return { 
+        "message": "URLs do Usuário",
+        "urls": url_list
+    }
+
+@url_router.patch('/update-title/{short_code}')
+async def update_title(short_code: str, title: str, session: Session = Depends(get_session), user: User = Depends(verify_token)):
+    """
+    Rota de Atualização do Título da URL Encurtada
+    """
+    try:
+        url = session.query(URL).filter(URL.short_code == short_code, URL.user_id == user.id).first()
+    except:
+        return { "message": "Erro ao buscar URL" }
+
+    if not url:
+        raise HTTPException(status_code=404, detail="URL não encontrada")
+
+    url.title = title
+    session.commit()
+
+    return { 
+        "message": "Título atualizado com sucesso",
+        "short-code": url.short_code,
+        "new-title": url.title
+    }
+
+
 @url_router.get('/test-code-generation')
 async def test_code(session: Session = Depends(get_session)):
     generated_code = generate_short_code()
