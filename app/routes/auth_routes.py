@@ -89,3 +89,11 @@ async def user_refresh_token(user: User = Depends()):
         "token_type": "Bearer"
     }
 
+@auth_router.get('/me')
+async def user_info(user: User = Depends()):
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email
+    }
+
