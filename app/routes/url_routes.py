@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from ..dependencies import get_session, verify_token
 from ..utils.code_generator import generate_short_code
 from ..config import settings
+import qrcode
+from io import BytesIO
+import base64
+from fastapi.responses import StreamingResponse
 
 url_router = APIRouter(prefix='/url', tags=['url'], dependencies=[Depends(verify_token)])
 
@@ -116,32 +120,63 @@ async def update_title(short_code: str, title: str, session: Session = Depends(g
         "new-title": url.title
     }
 
-
-@url_router.get('/test-code-generation')
-async def test_code(session: Session = Depends(get_session)):
-    generated_code = generate_short_code()
-
+@url_router.get('/generate-qrcode/{short_code}')
+async def generate_qrcode(short_code: str, session: Session = Depends(get_session), user: User = Depends(verify_token)):
+    """
+    Rota de Geração de QR Code para a URL Encurtada
+    """
     try:
-        existing_urls = session.query(URL).filter(URL.short_code == generated_code).all()
+        url = session.query(URL).filter(URL.short_code == short_code, URL.user_id == user.id).first()
     except:
-        return { "message": "Erro ao buscar URLs" }
+        return { "message": "Erro ao buscar URL" }
 
-    generated_code = generate_short_code()
+    if not url:
+        raise HTTPException(status_code=404, detail="URL não encontrada")
 
-    codes = []
-    for url in existing_urls:
-        codes.append(url.short_code)
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(f'{url.original_url}')
+    qr.make(fit=True)
 
-    while generated_code in codes:
-        generated_code = generate_short_code()
-        if generated_code in codes:
-            print("Código já existe")
-        else:
-            print("Código não existe")
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    buffered.seek(0)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    short_code = ''
-    print(codes)
     return { 
-        "message": "URL Curto",
-        "short-code": short_code  
+        "message": "QR Code gerado com sucesso",
+        "short-code": url.short_code,
+        "qrcode": img_str
+    }
+    # return StreamingResponse(
+    #     buffered,
+    #     media_type="image/png"
+    # )
+
+
+@url_router.delete('/delete-url/{short_code}')
+async def delete_url(short_code: str, session: Session = Depends(get_session), user: User = Depends(verify_token)):
+    """
+    Rota de Exclusão da URL Encurtada
+    """
+    try:
+        url = session.query(URL).filter(URL.short_code == short_code, URL.user_id == user.id).first()
+    except:
+        return { "message": "Erro ao buscar URL" }
+
+    if not url:
+        raise HTTPException(status_code=404, detail="URL não encontrada")
+
+    session.delete(url)
+    session.commit()
+
+    return { 
+        "message": "URL excluída com sucesso",
+        "short-code": short_code
     }
