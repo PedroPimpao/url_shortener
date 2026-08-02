@@ -25,4 +25,10 @@ class ShortedURLSchema(BaseModel):
     short_url: str
 
     class Config:
-            from_attributes = True
+        from_attributes = True
+
+# class URLAccessSchema(BaseModel):
+#     short_code: str
+
+#     class Config:
+#         from_attributes = True

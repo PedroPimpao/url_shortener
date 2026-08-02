@@ -19,7 +19,7 @@ class URL(Base, UUIDMixin, TimestampMixin):
         self.original_url = original_url
         self.short_code = short_code
         self.user_id = user_id
-        self.short_url = f'url_site/{short_code}'
+        # self.short_url = f'url_site/{short_code}'
 
     original_url: Mapped[str] = mapped_column(
         String(2048),
