@@ -1,105 +1,65 @@
-# controllers/auth_controller.py
-
-from datetime import timedelta
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..schemas import LoginSchema, UserSchema
-from ..services.auth_service import AuthService
-
+from ..models import User
+from ..services.auth_service import (
+    AuthService,
+    EmailAlreadyExistsError,
+    InvalidCredentialsError,
+)
 
 class AuthController:
-
     @staticmethod
     def create_account(
+        name: str,
+        email: str,
+        password: str,
         session: Session,
-        data: UserSchema
     ):
-
         try:
-
-            user = AuthService.create_account(
-                session,
-                data.name,
-                data.email,
-                data.password
+            return AuthService.create_account(
+                name=name,
+                email=email,
+                password=password,
+                session=session,
             )
-
-            return {
-                "message": f"Account created successfully {user.email}"
-            }
-
-        except ValueError as e:
-            raise HTTPException(
-                status_code=400,
-                detail=str(e)
-            )
+        except EmailAlreadyExistsError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
 
     @staticmethod
     def login(
+        email: str,
+        password: str,
         session: Session,
-        data: LoginSchema
     ):
-
-        user = AuthService.authenticate(
-            session,
-            data.email,
-            data.password
-        )
-
-        if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid credentials"
+        try:
+            return AuthService.login(
+                email=email,
+                password=password,
+                session=session,
             )
-
-        return {
-            "access_token": AuthService.create_token(user.id),
-            "refresh_token": AuthService.create_token(
-                user.id,
-                timedelta(days=7)
-            ),
-            "token_type": "Bearer"
-        }
+        except InvalidCredentialsError as error:
+            raise HTTPException(status_code=401, detail=str(error)) from error
 
     @staticmethod
     def login_form(
+        email: str,
+        password: str,
         session: Session,
-        username: str,
-        password: str
     ):
-
-        user = AuthService.authenticate(
-            session,
-            username,
-            password
-        )
-
-        if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid credentials"
+        try:
+            return AuthService.login_form(
+                email=email,
+                password=password,
+                session=session,
             )
-
-        return {
-            "access_token": AuthService.create_token(user.id),
-            "token_type": "Bearer"
-        }
+        except InvalidCredentialsError as error:
+            raise HTTPException(status_code=401, detail=str(error)) from error
 
     @staticmethod
-    def me(user):
-
-        return {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email
-        }
+    def refresh_token(user_id: str):
+        return AuthService.refresh_token(user_id=user_id)
 
     @staticmethod
-    def refresh(user):
-
-        return {
-            "access_token": AuthService.create_token(user.id),
-            "token_type": "Bearer"
-        }
+    def get_user_info(user: User):
+        return AuthService.get_user_info(user=user)
