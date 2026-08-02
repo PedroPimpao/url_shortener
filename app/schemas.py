@@ -21,8 +21,8 @@ class URLSchema(BaseModel):
     class Config:
             from_attributes = True
 
-class ShortedURLSchema(BaseModel):
-    short_url: str
+class UpdateTitleSchema(BaseModel):
+    title: str
 
     class Config:
         from_attributes = True
