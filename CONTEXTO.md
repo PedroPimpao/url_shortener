@@ -12,7 +12,7 @@ Estado atual relevante:
 - não há suíte de testes versionada;
 - a rota de acesso ao link curto retorna a URL original em JSON; ela não executa redirecionamento HTTP;
 - os campos de recuperação de senha e expiração de URL existem nos modelos, mas ainda não possuem fluxos implementados;
-- `app/routes/user_routes.py` e `app/services/user_service.py` estão vazios e não são registrados na aplicação.
+- as rotas `/user` permitem ao usuário autenticado atualizar nome, email e senha.
 
 ## Tecnologias
 
@@ -139,6 +139,10 @@ O relacionamento é `User 1:N URL`. A remoção de um usuário elimina suas URLs
 - o fluxo atual não valida se `original_url` é uma URL bem-formada;
 - `expires_at` não é consultado ao acessar um link;
 - o endpoint de refresh aceita qualquer JWT válido emitido pela aplicação; não diferencia access token de refresh token.
+- a alteração de nome exige de 2 a 120 caracteres após normalizar espaços e rejeita o nome atual;
+- a alteração de email exige email atual, novo email e senha válidos, e rejeita email repetido ou já cadastrado;
+- a alteração de senha exige o email e a senha atuais, no mínimo 8 caracteres na nova senha, confirmação idêntica e uma senha diferente da atual;
+- a conta alterada é sempre determinada pelo JWT, nunca por um identificador enviado pelo cliente.
 
 ## Rotas de API
 
@@ -153,6 +157,9 @@ O FastAPI também disponibiliza, por padrão, a interface Swagger em `/docs`, Re
 | POST | `/auth/login-form` | Não | Form OAuth2: `username`, `password` | Retorna access token e tipo; usado pelo Swagger |
 | GET | `/auth/refresh-token` | Bearer | — | Emite novo access token |
 | GET | `/auth/me` | Bearer | — | Retorna `id`, `name` e `email` do usuário |
+| PATCH | `/user/update-name` | Bearer | JSON: `new_name` | Atualiza o nome do usuário autenticado |
+| PATCH | `/user/update-email` | Bearer | JSON: `current_email`, `new_email`, `password` | Reautentica e atualiza o email |
+| PATCH | `/user/update-password` | Bearer | JSON: `email`, `current_password`, `new_password`, `new_password_confirmation` | Reautentica e atualiza a senha |
 | GET | `/url/` | Bearer | — | Mensagem da área de URLs |
 | POST | `/url/create-short-url` | Bearer | JSON: `original_url` | Cria link e retorna código e URL curta montada |
 | GET | `/url/access-url/{short_code}` | Bearer | Parâmetro de caminho | Retorna URL original e total de cliques atualizado |
@@ -217,7 +224,9 @@ Erros HTTP explícitos seguem o formato padrão do FastAPI:
 | Status | Situação atual |
 |---|---|
 | `400 Bad Request` | Tentativa de cadastrar e-mail já existente |
+| `400 Bad Request` | Dados de usuário inalterados ou novo email já cadastrado |
 | `401 Unauthorized` | Credenciais inválidas, JWT inválido/expirado ou usuário do token inexistente |
+| `401 Unauthorized` | Email ou senha atuais incorretos durante a manutenção da conta |
 | `404 Not Found` | URL não encontrada, URL fora da propriedade do usuário ou lista vazia |
 | `422 Unprocessable Entity` | Entrada ausente ou incompatível com os schemas, tratado pelo FastAPI |
 | `500 Internal Server Error` | Falha capturada ao buscar URLs durante a criação do link, ou erro não tratado |
@@ -242,6 +251,14 @@ Os services lançam `EmailAlreadyExistsError`, `InvalidCredentialsError`, `Uniqu
 3. a URL é salva vinculada ao usuário, com título vazio e zero cliques;
 4. a resposta monta a URL curta com `API_URL` e o código;
 5. ao chamar `/url/access-url/{short_code}`, a API localiza o registro, incrementa os cliques e retorna a URL original em JSON.
+
+### Manutenção da conta
+
+1. o usuário envia um Bearer token válido em qualquer rota `/user`;
+2. `/user/update-name` normaliza e atualiza apenas um nome diferente do atual;
+3. `/user/update-email` confere o email atual e a senha antes de garantir a unicidade e salvar o novo email;
+4. `/user/update-password` confere email e senha atuais, valida a confirmação e persiste somente o hash bcrypt da nova senha;
+5. nenhuma dessas respostas expõe senha ou hash.
 
 ### Gerenciamento das URLs
 
