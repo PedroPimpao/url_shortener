@@ -1,11 +1,23 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from ..controllers.auth_controller import AuthController
 from ..dependencies import get_session, verify_token
 from ..models import User
-from ..schemas import LoginSchema, UserSchema
+from ..schemas import (
+    LoginSchema,
+    PasswordResetCompleteSchema,
+    PasswordResetRequestSchema,
+    PasswordResetVerifySchema,
+    UserSchema,
+)
+from ..utils.rate_limiter import (
+    client_key,
+    password_reset_complete_limiter,
+    password_reset_request_limiter,
+    password_reset_verify_limiter,
+)
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -86,3 +98,47 @@ async def user_info(user: User = Depends(verify_token)):
         "name": current_user.name,
         "email": current_user.email,
     }
+
+
+@auth_router.post("/password-reset/request", status_code=202)
+async def request_password_reset(
+    reset_schema: PasswordResetRequestSchema,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    password_reset_request_limiter.check(client_key(request))
+    otp = AuthController.request_password_reset(reset_schema.email, session)
+    return {
+        "message": "Código de recuperação gerado com sucesso",
+        "otp": otp,
+    }
+
+
+@auth_router.post("/password-reset/verify")
+async def verify_password_reset_otp(
+    reset_schema: PasswordResetVerifySchema,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    password_reset_verify_limiter.check(client_key(request))
+    reset_token = AuthController.verify_password_reset_otp(
+        reset_schema.email,
+        reset_schema.otp,
+        session,
+    )
+    return {"reset_token": reset_token}
+
+
+@auth_router.post("/password-reset/complete")
+async def complete_password_reset(
+    reset_schema: PasswordResetCompleteSchema,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    password_reset_complete_limiter.check(client_key(request))
+    AuthController.complete_password_reset(
+        reset_schema.reset_token,
+        reset_schema.new_password,
+        session,
+    )
+    return {"message": "Senha redefinida com sucesso"}

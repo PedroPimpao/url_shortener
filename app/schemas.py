@@ -27,6 +27,38 @@ class LoginSchema(BaseModel):
     class Config:
             from_attributes = True
 
+
+class PasswordResetRequestSchema(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, email: str) -> str:
+        return normalize_and_validate_email(email)
+
+
+class PasswordResetVerifySchema(PasswordResetRequestSchema):
+    otp: str = Field(pattern=r"^\d{6}$")
+
+
+class PasswordResetCompleteSchema(BaseModel):
+    reset_token: str = Field(min_length=32, max_length=255)
+    new_password: str = Field(min_length=8, max_length=72)
+    new_password_confirmation: str = Field(min_length=8, max_length=72)
+
+    @field_validator("new_password", "new_password_confirmation")
+    @classmethod
+    def validate_bcrypt_length(cls, password: str) -> str:
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("A senha deve possuir no máximo 72 bytes")
+        return password
+
+    @model_validator(mode="after")
+    def validate_password_confirmation(self):
+        if self.new_password != self.new_password_confirmation:
+            raise ValueError("A confirmação da nova senha não confere")
+        return self
+
 class URLSchema(BaseModel):
     original_url: str
 

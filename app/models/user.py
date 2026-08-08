@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database.base import Base, TimestampMixin, UUIDMixin
@@ -35,7 +35,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     )
 
     password_reset_otp: Mapped[str | None] = mapped_column(
-        String(6),
+        String(64),
         nullable=True,
     )
 
@@ -44,10 +44,20 @@ class User(Base, UUIDMixin, TimestampMixin):
         nullable=True,
     )
 
-    is_password_reset_authorized: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
+    password_reset_attempts: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
         nullable=False,
+    )
+
+    password_reset_token: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+
+    password_reset_token_expires: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     urls: Mapped[list["URL"]] = relationship(

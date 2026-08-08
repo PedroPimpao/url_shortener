@@ -11,7 +11,8 @@ Estado atual relevante:
 - a API não possui frontend neste repositório;
 - não há suíte de testes versionada;
 - a rota de acesso ao link curto retorna a URL original em JSON; ela não executa redirecionamento HTTP;
-- os campos de recuperação de senha e expiração de URL existem nos modelos, mas ainda não possuem fluxos implementados;
+- o fluxo de recuperação de senha retorna o OTP diretamente pela API e usa autorização curta de uso único;
+- a expiração de URL existe no modelo, mas ainda não é aplicada;
 - as rotas `/user` permitem ao usuário autenticado atualizar nome, email e senha.
 
 ## Tecnologias
@@ -99,9 +100,11 @@ Todos os modelos usam UUID como chave primária e os campos `created_at` e `upda
 | `name` | varchar(120) | Obrigatório |
 | `email` | varchar(255) | Obrigatório, único e indexado |
 | `password` | varchar(255) | Obrigatório; armazena hash bcrypt |
-| `password_reset_otp` | varchar(6) | Opcional; fluxo ainda não implementado |
-| `password_reset_expires` | datetime com timezone | Opcional; fluxo ainda não implementado |
-| `is_password_reset_authorized` | boolean | Obrigatório, padrão `false` |
+| `password_reset_otp` | varchar(64) | Hash HMAC do OTP; opcional |
+| `password_reset_expires` | datetime com timezone | Expiração do OTP; opcional |
+| `password_reset_attempts` | integer | Tentativas inválidas do OTP; padrão `0` |
+| `password_reset_token` | varchar(64) | Hash SHA-256 da autorização de redefinição; opcional |
+| `password_reset_token_expires` | datetime com timezone | Expiração da autorização; opcional |
 | `created_at` | datetime com timezone | Criação automática |
 | `updated_at` | datetime com timezone | Atualizado pelo ORM em alterações |
 
@@ -157,6 +160,9 @@ O FastAPI também disponibiliza, por padrão, a interface Swagger em `/docs`, Re
 | POST | `/auth/login-form` | Não | Form OAuth2: `username`, `password` | Retorna access token e tipo; usado pelo Swagger |
 | GET | `/auth/refresh-token` | Bearer | — | Emite novo access token |
 | GET | `/auth/me` | Bearer | — | Retorna `id`, `name` e `email` do usuário |
+| POST | `/auth/password-reset/request` | Não | JSON: `email` | Gera e retorna um OTP; para contas inexistentes retorna um código não persistido |
+| POST | `/auth/password-reset/verify` | Não | JSON: `email`, `otp` | Valida o OTP e retorna autorização curta |
+| POST | `/auth/password-reset/complete` | Não | JSON: `reset_token`, `new_password`, `new_password_confirmation` | Redefine a senha e consome a autorização |
 | PATCH | `/user/update-name` | Bearer | JSON: `new_name` | Atualiza o nome do usuário autenticado |
 | PATCH | `/user/update-email` | Bearer | JSON: `current_email`, `new_email`, `password` | Reautentica e atualiza o email |
 | PATCH | `/user/update-password` | Bearer | JSON: `email`, `current_password`, `new_password`, `new_password_confirmation` | Reautentica e atualiza a senha |
@@ -181,8 +187,17 @@ Crie um arquivo `.env` na raiz. Ele não deve ser versionado nem ter seus valore
 | `ALGORITHM` | Algoritmo criptográfico usado pelo `python-jose` para JWT, como um algoritmo HMAC compatível. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Duração, em minutos, do access token. Deve ser um número inteiro. |
 | `API_URL` | URL base pública usada para montar o campo `short-url` após a criação de um link. |
+| `SMTP_HOST` | Servidor SMTP usado para enviar o código de recuperação. |
+| `SMTP_PORT` | Porta SMTP; padrão `587`. |
+| `SMTP_USERNAME` | Usuário SMTP, quando necessário. |
+| `SMTP_PASSWORD` | Senha SMTP, quando necessária. |
+| `SMTP_FROM_EMAIL` | Endereço remetente dos códigos de recuperação. |
+| `SMTP_USE_TLS` | Habilita STARTTLS; padrão `true`. |
+| `PASSWORD_RESET_OTP_EXPIRE_MINUTES` | Validade do OTP; padrão `10`. |
+| `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES` | Validade da autorização; padrão `10`. |
+| `PASSWORD_RESET_MAX_ATTEMPTS` | Máximo de tentativas por OTP; padrão `5`. |
 
-Todas são obrigatórias na inicialização. Variáveis adicionais são ignoradas pela configuração atual.
+As cinco variáveis originais são obrigatórias na inicialização. As opções SMTP permanecem disponíveis para o `EmailService`, mas não são usadas pelo fluxo atual de recuperação. As demais possuem os padrões indicados. Variáveis adicionais são ignoradas.
 
 ## Dependências do projeto
 
