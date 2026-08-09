@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     PASSWORD_RESET_OTP_EXPIRE_MINUTES: int = 10
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 10
     PASSWORD_RESET_MAX_ATTEMPTS: int = 5
+    PORT: int = 8000
 
     model_config = SettingsConfigDict(
         env_file=".env",
