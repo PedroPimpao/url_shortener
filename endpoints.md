@@ -45,6 +45,7 @@ Quando o cabeçalho Bearer não é enviado, o detalhe pode ser gerado automatica
 | `POST` | `/url/create-short-url` | Bearer | Cria uma URL curta |
 | `GET` | `/url/access-url/{short_code}` | Bearer | Consulta a URL original e registra um clique |
 | `GET` | `/url/list_urls` | Bearer | Lista as URLs do usuário |
+| `GET` | `/url/get-stats` | Bearer | Retorna estatísticas das URLs do usuário |
 | `PATCH` | `/url/update-title/{short_code}` | Bearer | Atualiza o título de uma URL |
 | `GET` | `/url/generate-qrcode/{short_code}` | Bearer | Gera um QR Code em Base64 |
 | `DELETE` | `/url/delete-url/{short_code}` | Bearer | Exclui uma URL |
@@ -549,6 +550,29 @@ Lista apenas as URLs pertencentes ao usuário autenticado.
 - `401 Unauthorized`: falha de autenticação.
 - `404 Not Found`: `{"detail": "Nenhuma URL encontrada para o usuário"}`.
 - `404 Not Found`: `{"detail": "Erro ao buscar URLs"}` em falha de consulta.
+
+### `GET /url/get-stats`
+
+Retorna estatísticas calculadas apenas a partir das URLs pertencentes ao usuário autenticado.
+
+**Resposta — `200 OK`**
+
+```json
+{
+  "total_urls": 3,
+  "total_clicks": 12,
+  "url_most_clicks": "aB12Cd34",
+  "most_clicks": 7
+}
+```
+
+`url_most_clicks` contém o código curto da URL com mais acessos, enquanto `most_clicks` informa sua quantidade de cliques. Em caso de empate, é retornada a primeira URL encontrada com a maior quantidade.
+
+**Erros conhecidos**
+
+- `401 Unauthorized`: falha de autenticação.
+- `404 Not Found`: `{"detail": "URLs não encontradas"}` quando o usuário não possui URLs.
+- `404 Not Found`: `{"detail": "Erro ao buscar URLs"}` em falha de consulta ou cálculo.
 
 ### `PATCH /url/update-title/{short_code}`
 
