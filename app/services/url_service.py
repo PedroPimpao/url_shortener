@@ -62,6 +62,7 @@ class URLService:
         url_list = []
         for url in urls:
             url_list.append({
+                "url_title": url.title,
                 "original-url": url.original_url,
                 "short-code": url.short_code,
                 "clicks": url.clicks
