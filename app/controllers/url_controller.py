@@ -55,6 +55,19 @@ class URLController:
             )
 
     @staticmethod
+    def get_stats(user_id: str, session: Session):
+        try:
+            return URLService.get_stats(
+                user_id,
+                session
+            )
+        except MultipleURLsNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=str(e)
+            )
+
+    @staticmethod
     def update_title(
         user_id: str,
         short_code: str,

@@ -11,6 +11,9 @@ class UniqueURLNotFoundError(Exception):
 class MultipleURLsNotFoundError(Exception):
     pass
 
+class StatsNotFoundError(Exception):
+    pass
+
 class URLService:
     @staticmethod
     def create_short_url(original_url: str, user_id: str, session: Session):
@@ -55,7 +58,7 @@ class URLService:
             urls = session.query(URL).filter(URL.user_id == user_id).all()
         except:
             raise MultipleURLsNotFoundError('Erro ao buscar URLs')
-    
+
         if not urls:
             raise MultipleURLsNotFoundError('Nenhuma URL encontrada para o usuário')
     
@@ -69,6 +72,35 @@ class URLService:
                })
 
         return url_list
+
+    @staticmethod
+    def get_stats(user_id: str, session: Session):
+        try:
+            urls = session.query(URL).filter(URL.user_id == user_id).all()
+            amount = len(urls)
+            total_clicks = 0
+            url_most_clicks = None
+            most_clicks = 0
+
+            for url in urls:
+                total_clicks += url.clicks
+                if url_most_clicks is None or url.clicks > most_clicks:
+                    url_most_clicks = url.short_code
+                    most_clicks = url.clicks
+        except:
+            raise MultipleURLsNotFoundError("Erro ao buscar URLs")
+
+        if not urls:
+            raise MultipleURLsNotFoundError("URLs não encontradas")
+
+        data =  {
+            "total_urls": amount,
+            "total_clicks": total_clicks,
+            "url_most_clicks": url_most_clicks,
+            "most_clicks": most_clicks
+        }
+
+        return data
 
     @staticmethod
     def update_title(user_id: str, short_code: str, new_title: str, session: Session):

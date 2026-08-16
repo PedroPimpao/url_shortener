@@ -6,12 +6,12 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     API_URL: str
-    SMTP_HOST: str | None = None
-    SMTP_PORT: int = 587
-    SMTP_USERNAME: str | None = None
-    SMTP_PASSWORD: str | None = None
-    SMTP_FROM_EMAIL: str | None = None
-    SMTP_USE_TLS: bool = True
+    # SMTP_HOST: str | None = None
+    # SMTP_PORT: int = 587
+    # SMTP_USERNAME: str | None = None
+    # SMTP_PASSWORD: str | None = None
+    # SMTP_FROM_EMAIL: str | None = None
+    # SMTP_USE_TLS: bool = True
     PASSWORD_RESET_OTP_EXPIRE_MINUTES: int = 10
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 10
     PASSWORD_RESET_MAX_ATTEMPTS: int = 5
