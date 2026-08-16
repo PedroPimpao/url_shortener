@@ -70,6 +70,18 @@ async def list_urls(session: Session = Depends(get_session), user: User = Depend
         "urls": url_list
     }
 
+@url_router.get('/get-stats')
+async def get_stats(session: Session = Depends(get_session), user: User = Depends(verify_token)):
+    """
+    Rota de estatísticas das URLs do Usuário
+    """
+    urls_stats = URLController.get_stats(
+        user_id = user.id,
+        session = session
+    )
+
+    return urls_stats
+
 @url_router.patch('/update-title/{short_code}')
 async def update_title(short_code: str, title_schema: UpdateTitleSchema, session: Session = Depends(get_session), user: User = Depends(verify_token)):
     """
