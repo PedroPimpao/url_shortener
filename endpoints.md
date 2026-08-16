@@ -535,6 +535,7 @@ Lista apenas as URLs pertencentes ao usuário autenticado.
   "message": "URLs do Usuário",
   "urls": [
     {
+      "url_title": "Conteúdo de exemplo",
       "original-url": "https://example.com/conteudo",
       "short-code": "aB12Cd34",
       "clicks": 3
